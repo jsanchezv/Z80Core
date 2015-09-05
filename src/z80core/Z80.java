@@ -1137,29 +1137,6 @@ public class Z80 {
         return oper8;
     }
 
-    // Suma de 8 bits afectando a los flags
-    private void add(int oper8) {
-        int res = regA + oper8;
-
-        carryFlag = res > 0xff;
-        res &= 0xff;
-        sz5h3pnFlags = sz53n_addTable[res];
-
-        /* El módulo 16 del resultado será menor que el módulo 16 del registro A
-         * si ha habido HalfCarry. Sucede lo mismo para todos los métodos suma
-         * SIN carry */
-        if ((res & 0x0f) < (regA & 0x0f)) {
-            sz5h3pnFlags |= HALFCARRY_MASK;
-        }
-
-        if (((regA ^ ~oper8) & (regA ^ res)) > 0x7f) {
-            sz5h3pnFlags |= OVERFLOW_MASK;
-        }
-
-        regA = res;
-        flagQ = true;
-    }
-
     // Suma con acarreo de 8 bits
     private void adc(int oper8) {
         int res = regA + oper8;
@@ -1228,29 +1205,6 @@ public class Z80 {
             sz5h3pnFlags |= OVERFLOW_MASK;
         }
 
-        flagQ = true;
-    }
-
-    // Resta de 8 bits
-    private void sub(int oper8) {
-        int res = regA - oper8;
-
-        carryFlag = res < 0;
-        res &= 0xff;
-        sz5h3pnFlags = sz53n_subTable[res];
-
-        /* El módulo 16 del resultado será mayor que el módulo 16 del registro A
-         * si ha habido HalfCarry. Sucede lo mismo para todos los métodos resta
-         * SIN carry, incluido cp */
-        if ((res & 0x0f) > (regA & 0x0f)) {
-            sz5h3pnFlags |= HALFCARRY_MASK;
-        }
-
-        if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-            sz5h3pnFlags |= OVERFLOW_MASK;
-        }
-
-        regA = res;
         flagQ = true;
     }
 
@@ -1373,11 +1327,12 @@ public class Z80 {
             carry = true;
         }
 
+        carryFlag = false;
         if ((sz5h3pnFlags & ADDSUB_MASK) != 0) {
-            sub(suma);
+            sbc(suma);
             sz5h3pnFlags = (sz5h3pnFlags & HALFCARRY_MASK) | sz53pn_subTable[regA];
         } else {
-            add(suma);
+            adc(suma);
             sz5h3pnFlags = (sz5h3pnFlags & HALFCARRY_MASK) | sz53pn_addTable[regA];
         }
 
@@ -2457,35 +2412,43 @@ public class Z80 {
 //                break;
 //            }
             case 0x80: {     /* ADD A,B */
-                add(regB);
+                carryFlag = false;
+                adc(regB);
                 break;
             }
             case 0x81: {     /* ADD A,C */
-                add(regC);
+                carryFlag = false;
+                adc(regC);
                 break;
             }
             case 0x82: {     /* ADD A,D */
-                add(regD);
+                carryFlag = false;
+                adc(regD);
                 break;
             }
             case 0x83: {     /* ADD A,E */
-                add(regE);
+                carryFlag = false;
+                adc(regE);
                 break;
             }
             case 0x84: {     /* ADD A,H */
-                add(regH);
+                carryFlag = false;
+                adc(regH);
                 break;
             }
             case 0x85: {     /* ADD A,L */
-                add(regL);
+                carryFlag = false;
+                adc(regL);
                 break;
             }
             case 0x86: {     /* ADD A,(HL) */
-                add(Z80opsImpl.peek8(getRegHL()));
+                carryFlag = false;
+                adc(Z80opsImpl.peek8(getRegHL()));
                 break;
             }
             case 0x87: {     /* ADD A,A */
-                add(regA);
+                carryFlag = false;
+                adc(regA);
                 break;
             }
             case 0x88: {     /* ADC A,B */
@@ -2521,35 +2484,43 @@ public class Z80 {
                 break;
             }
             case 0x90: {     /* SUB B */
-                sub(regB);
+                carryFlag = false;
+                sbc(regB);
                 break;
             }
             case 0x91: {     /* SUB C */
-                sub(regC);
+                carryFlag = false;
+                sbc(regC);
                 break;
             }
             case 0x92: {     /* SUB D */
-                sub(regD);
+                carryFlag = false;
+                sbc(regD);
                 break;
             }
             case 0x93: {     /* SUB E */
-                sub(regE);
+                carryFlag = false;
+                sbc(regE);
                 break;
             }
             case 0x94: {     /* SUB H */
-                sub(regH);
+                carryFlag = false;
+                sbc(regH);
                 break;
             }
             case 0x95: {     /* SUB L */
-                sub(regL);
+                carryFlag = false;
+                sbc(regL);
                 break;
             }
             case 0x96: {     /* SUB (HL) */
-                sub(Z80opsImpl.peek8(getRegHL()));
+                carryFlag = false;
+                sbc(Z80opsImpl.peek8(getRegHL()));
                 break;
             }
             case 0x97: {     /* SUB A */
-                sub(regA);
+                carryFlag = false;
+                sbc(regA);
                 break;
             }
             case 0x98: {     /* SBC A,B */
@@ -2753,7 +2724,8 @@ public class Z80 {
                 break;
             }
             case 0xC6: {     /* ADD A,n */
-                add(Z80opsImpl.peek8(regPC));
+                carryFlag = false;
+                adc(Z80opsImpl.peek8(regPC));
                 regPC = (regPC + 1) & 0xffff;
                 break;
             }
@@ -2861,7 +2833,8 @@ public class Z80 {
                 break;
             }
             case 0xD6: {     /* SUB n */
-                sub(Z80opsImpl.peek8(regPC));
+                carryFlag = false;
+                sbc(Z80opsImpl.peek8(regPC));
                 regPC = (regPC + 1) & 0xffff;
                 break;
             }
@@ -4593,17 +4566,20 @@ public class Z80 {
                 break;
             }
             case 0x84: {     /* ADD A,IXh */
-                add(regIXY >>> 8);
+                carryFlag = false;
+                adc(regIXY >>> 8);
                 break;
             }
             case 0x85: {     /* ADD A,IXl */
-                add(regIXY & 0xff);
+                carryFlag = false;
+                adc(regIXY & 0xff);
                 break;
             }
             case 0x86: {     /* ADD A,(IX+d) */
                 memptr = (regIXY + (byte) Z80opsImpl.peek8(regPC)) & 0xffff;
                 Z80opsImpl.contendedStates(regPC, 5);
-                add(Z80opsImpl.peek8(memptr));
+                carryFlag = false;
+                adc(Z80opsImpl.peek8(memptr));
                 regPC = (regPC + 1) & 0xffff;
                 break;
             }
@@ -4623,17 +4599,20 @@ public class Z80 {
                 break;
             }
             case 0x94: {     /* SUB IXh */
-                sub(regIXY >>> 8);
+                carryFlag = false;
+                sbc(regIXY >>> 8);
                 break;
             }
             case 0x95: {     /* SUB IXl */
-                sub(regIXY & 0xff);
+                carryFlag = false;
+                sbc(regIXY & 0xff);
                 break;
             }
             case 0x96: {     /* SUB (IX+d) */
                 memptr = (regIXY + (byte) Z80opsImpl.peek8(regPC)) & 0xffff;
                 Z80opsImpl.contendedStates(regPC, 5);
-                sub(Z80opsImpl.peek8(memptr));
+                carryFlag = false;
+                sbc(Z80opsImpl.peek8(memptr));
                 regPC = (regPC + 1) & 0xffff;
                 break;
             }
@@ -6093,7 +6072,8 @@ public class Z80 {
             case 0x7C: {     /* NEG */
                 int aux = regA;
                 regA = 0;
-                sub(aux);
+                carryFlag = false;
+                sbc(aux);
                 break;
             }
             case 0x45:
