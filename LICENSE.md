@@ -1,13 +1,5 @@
 **Copyright © 2008-2015 José Luis Sánchez**
 
-ZX Spectrum ROM files © Amstrad Plc
-
-args4j library Copyright © 2013 Kohsuke Kawaguchi and other contributors
-
-JHexView component by Sebastian Porst (sp@porst.tv)
-
-
-
 #### The GNU GPL LICENSE (GPLv3)
 
                     GNU GENERAL PUBLIC LICENSE
