@@ -11,14 +11,15 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import z80core.Clock;
-import z80core.Z80operations;
+import z80core.MemIoOps;
+import z80core.NotifyOps;
 import z80core.Z80;
 
 /**
  *
  * @author jsanchez
  */
-public class Z80Exerciser implements Z80operations {
+public class Z80Exerciser implements MemIoOps, NotifyOps {
 
     private final Z80 z80;
     private final Clock clock;
@@ -28,7 +29,7 @@ public class Z80Exerciser implements Z80operations {
     private boolean finish = false;
     
     public Z80Exerciser() {
-        z80 = new Z80(this);
+        z80 = new Z80(this, this);
         this.clock = Clock.getInstance();
     }
 
@@ -77,13 +78,23 @@ public class Z80Exerciser implements Z80operations {
     }
 
     @Override
-    public void contendedStates(int address, int tstates) {
+    public void addressOnBus(int address, int tstates) {
         // Additional clocks to be added on some instructions
         clock.addTstates(tstates);
     }
 
     @Override
-    public void breakpoint() {
+    public void interruptHandlingTime(int tstates) {
+        clock.addTstates(7);
+    }
+
+    @Override
+    public boolean isActiveINT() {
+        return false;
+    }
+
+    @Override
+    public int breakpoint(int address, int opcode) {
         // Emulate CP/M Syscall at address 5
         switch (z80.getRegC()) {
             case 0: // BDOS 0 System Reset
@@ -103,6 +114,7 @@ public class Z80Exerciser implements Z80operations {
                 System.out.println("BDOS Call " + z80.getRegC());
                 finish = true;
         }
+        return opcode;
     }
 
     @Override
@@ -141,11 +153,13 @@ public class Z80Exerciser implements Z80operations {
         Z80Exerciser exerciser = new Z80Exerciser();
         long start = System.currentTimeMillis();
         exerciser.runTest("zexall.bin");
-        System.out.println("Test zexall.bin executed in " + (System.currentTimeMillis() - start));
-        exerciser.runTest("zexdoc.bin");
+        System.out.println("Test zexall.bin executed in " + (System.currentTimeMillis() - start) + " ms.");
+//        start = System.currentTimeMillis();
+//        exerciser.runTest("zexall.bin");
+//        System.out.println("Test zexall.bin executed in " + (System.currentTimeMillis() - start) + " ms.");
+//        exerciser.runTest("zexdoc.bin");
         //Test.testFrame(6988800);
         //Test.testFrame(69888);
         //Test.speedTest();
     }
-    
 }

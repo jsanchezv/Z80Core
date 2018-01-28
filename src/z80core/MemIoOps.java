@@ -9,7 +9,7 @@ package z80core;
  *
  * @author jsanchez
  */
-public interface Z80operations {
+public interface MemIoOps {
     int fetchOpcode(int address);
 
     int peek8(int address);
@@ -20,8 +20,8 @@ public interface Z80operations {
     int inPort(int port);
     void outPort(int port, int value);
 
-    void contendedStates(int address, int tstates);
+    void addressOnBus(int address, int tstates);
     
-    void breakpoint();
-    void execDone();
+    void interruptHandlingTime(int tstates);
+    boolean isActiveINT();
 }

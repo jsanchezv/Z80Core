@@ -114,8 +114,8 @@ public class Clock {
         }
 
         timeout = ntstates > 10 ? ntstates : 10;
-    } 
-    
+    }
+
     @Override
     public String toString() {
         return String.format("Frame: %d, t-states: %d", frames, tstates);
