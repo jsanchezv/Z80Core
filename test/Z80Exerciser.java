@@ -19,78 +19,20 @@ import z80core.Z80;
  *
  * @author jsanchez
  */
-public class Z80Exerciser implements MemIoOps, NotifyOps {
+public class Z80Exerciser implements NotifyOps {
 
     private final Z80 z80;
-    private final Clock clock;
-    
+//    private final Clock clock;
+    private final MemIoOps memIo;
+
     private final byte z80Ram[] = new byte[0x10000];
-    private final byte z80Ports[] = new byte[0x10000];
     private boolean finish = false;
     
     public Z80Exerciser() {
-        z80 = new Z80(this, this);
-        this.clock = Clock.getInstance();
-    }
-
-    @Override
-    public int fetchOpcode(int address) {
-        // 3 clocks to fetch opcode from RAM and 1 execution clock
-        clock.addTstates(4);
-        return z80Ram[address] & 0xff;
-    }
-
-    @Override
-    public int peek8(int address) {
-        clock.addTstates(3); // 3 clocks for read byte from RAM
-        return z80Ram[address] & 0xff;
-    }
-
-    @Override
-    public void poke8(int address, int value) {
-        clock.addTstates(3); // 3 clocks for write byte to RAM
-        z80Ram[address] = (byte)value;
-    }
-
-    @Override
-    public int peek16(int address) {
-        int lsb = peek8(address);
-        int msb = peek8(address + 1);
-        return (msb << 8) | lsb;
-    }
-
-    @Override
-    public void poke16(int address, int word) {
-        poke8(address, word);
-        poke8(address + 1, word >>> 8);
-    }
-
-    @Override
-    public int inPort(int port) {
-        clock.addTstates(4); // 4 clocks for read byte from bus
-        return z80Ports[port] & 0xff;
-    }
-
-    @Override
-    public void outPort(int port, int value) {
-        clock.addTstates(4); // 4 clocks for write byte to bus
-        z80Ports[port] = (byte)value;
-    }
-
-    @Override
-    public void addressOnBus(int address, int tstates) {
-        // Additional clocks to be added on some instructions
-        clock.addTstates(tstates);
-    }
-
-    @Override
-    public void interruptHandlingTime(int tstates) {
-        clock.addTstates(7);
-    }
-
-    @Override
-    public boolean isActiveINT() {
-        return false;
+        memIo = new MemIoOps(0, 0);
+        memIo.setRam(z80Ram);
+        z80 = new Z80(memIo, this);
+//        this.clock = Clock.getInstance();
     }
 
     @Override
@@ -98,7 +40,7 @@ public class Z80Exerciser implements MemIoOps, NotifyOps {
         // Emulate CP/M Syscall at address 5
         switch (z80.getRegC()) {
             case 0: // BDOS 0 System Reset
-                System.out.println("Z80 reset after " + clock.getTstates() + " t-states");
+                System.out.println("Z80 reset after " + memIo.getTstates() + " t-states");
                 finish = true;
                 break;
             case 2: // BDOS 2 console char output
@@ -132,7 +74,8 @@ public class Z80Exerciser implements MemIoOps, NotifyOps {
         }
         
         z80.reset();
-        clock.reset();
+//        clock.reset();
+        memIo.reset();
         finish = false;
 
         z80Ram[0] = (byte)0xC3;
