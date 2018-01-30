@@ -1346,7 +1346,7 @@ public class Z80 {
     }
 
     // Operación XOR lógica
-    private final void xor(int oper8) {
+    private void xor(int oper8) {
         regA = (regA ^ oper8) & 0xff;
         carryFlag = false;
         sz5h3pnFlags = sz53pn_addTable[regA];
@@ -1365,7 +1365,7 @@ public class Z80 {
     // es como SUB, pero solo afecta a los flags
     // Los flags SIGN y ZERO se calculan a partir del resultado
     // Los flags 3 y 5 se copian desde el operando (sigh!)
-    private final void cp(int oper8) {
+    private void cp(int oper8) {
         int res = regA - (oper8 & 0xff);
 
         carryFlag = res < 0;
