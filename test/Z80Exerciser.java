@@ -10,7 +10,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import z80core.Clock;
 import z80core.MemIoOps;
 import z80core.NotifyOps;
 import z80core.Z80;
@@ -22,7 +21,6 @@ import z80core.Z80;
 public class Z80Exerciser implements NotifyOps {
 
     private final Z80 z80;
-//    private final Clock clock;
     private final MemIoOps memIo;
 
     private final byte z80Ram[] = new byte[0x10000];
@@ -32,7 +30,6 @@ public class Z80Exerciser implements NotifyOps {
         memIo = new MemIoOps(0, 0);
         memIo.setRam(z80Ram);
         z80 = new Z80(memIo, this);
-//        this.clock = Clock.getInstance();
     }
 
     @Override
@@ -74,7 +71,6 @@ public class Z80Exerciser implements NotifyOps {
         }
         
         z80.reset();
-//        clock.reset();
         memIo.reset();
         finish = false;
 
