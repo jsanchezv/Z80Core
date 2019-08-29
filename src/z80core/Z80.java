@@ -1786,7 +1786,7 @@ public class Z80 {
 
         regPC = (regPC + 1) & 0xffff;
 
-        flagQ = false;
+        flagQ = pendingEI = false;
 
         // El prefijo 0xCB no cuenta para esta guerra.
         // En CBxx todas las xx producen un código válido
@@ -1813,12 +1813,6 @@ public class Z80 {
         }
 
         lastFlagQ = flagQ;
-
-        // Si está pendiente la activación de la interrupción y el
-        // código que se acaba de ejecutar no es el propio EI
-        if (pendingEI && opCode != 0xFB) {
-            pendingEI = false;
-        }
 
         if (execDone) {
             NotifyImpl.execDone();
