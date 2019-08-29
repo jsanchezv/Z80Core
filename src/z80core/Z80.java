@@ -1796,12 +1796,15 @@ public class Z80 {
                 decodeOpcode(opCode);
                 break;
             case 0xDD:
+                prefixOpcode = 0;
                 regIX = decodeDDFD(opCode, regIX);
                 break;
             case 0xED:
+                prefixOpcode = 0;
                 decodeED(opCode);
                 break;
             case 0xFD:
+                prefixOpcode = 0;
                 regIY = decodeDDFD(opCode, regIY);
                 break;
             default:
@@ -2938,7 +2941,7 @@ public class Z80 {
                 break;
             }
             case 0xDD: {     /* Subconjunto de instrucciones */
-                prefixOpcode = 0xDD;
+                regIX = decodeDDFD(opCode, regIX);
                 break;
             }
             case 0xDE: {     /* SBC A,n */
@@ -3043,7 +3046,7 @@ public class Z80 {
                 regPC = (regPC + 2) & 0xffff;
                 break;
             case 0xED:       /*Subconjunto de instrucciones*/
-                prefixOpcode = 0xED;
+                decodeED(opCode);
                 break;
             case 0xEE:       /* XOR n */
                 xor(MemIoImpl.peek8(regPC));
@@ -3130,7 +3133,7 @@ public class Z80 {
                 regPC = (regPC + 2) & 0xffff;
                 break;
             case 0xFD:       /* Subconjunto de instrucciones */
-                prefixOpcode = 0xFD;
+                regIY = decodeDDFD(opCode, regIY);
                 break;
             case 0xFE:       /* CP n */
                 cp(MemIoImpl.peek8(regPC));
@@ -4300,7 +4303,6 @@ public class Z80 {
      * interrupciones entre cada prefijo.
      */
     private int decodeDDFD(int opCode, int regIXY) {
-        prefixOpcode = 0;
         switch (opCode) {
             case 0x09: {     /* ADD IX,BC */
                 MemIoImpl.addressOnBus(getPairIR(), 7);
@@ -6068,7 +6070,6 @@ public class Z80 {
 
     //Subconjunto de instrucciones 0xED
     private void decodeED(int opCode) {
-        prefixOpcode = 0;
         switch (opCode) {
             case 0x40: {     /* IN B,(C) */
                 memptr = getRegBC();
