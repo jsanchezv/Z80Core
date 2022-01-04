@@ -214,6 +214,14 @@
  *          Se debe comprobar con HALT2INT (48k) y con Super HALT Invaders Test (128k)
  *          Si no está bien implementado, el Super Halt Invaders no incrementa la puntuación.
  *          Thanks to  Woody & ZjoyKiLer
+ *
+ *          04/01/2022 Corregido comportamiento de las instrucciones LDxR/CPxR/INxR/OTxR cuando,
+ *          en algún momento durante la repetición, se produce una interrupción. En ese caso,
+ *          los flags que ve el manejador de la interrupción están modificados respecto al caso
+ *          normal.
+ *          https://spectrumcomputing.co.uk/forums/viewtopic.php?f=23&t=6102
+ *          Comprobado con el test:
+ *          "Z80 Block Flags Test v4.0 (2022-01-01)(Helcmanovsky, Peter)[!].tap"
  */
 package z80core;
 
@@ -5642,6 +5650,10 @@ public class Z80 {
                     regPC = (regPC - 2) & 0xffff;
                     memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegDE() - 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= ((regPC >>> 8) & FLAG_53_MASK);
+                    }
                 }
                 break;
             }
@@ -5652,6 +5664,10 @@ public class Z80 {
                     regPC = (regPC - 2) & 0xffff;
                     memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegHL() - 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= ((regPC >>> 8) & FLAG_53_MASK);
+                    }
                 }
                 break;
             }
@@ -5660,6 +5676,17 @@ public class Z80 {
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
                     MemIoImpl.addressOnBus((getRegHL() - 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= (regPC >>> 8) & FLAG_53_MASK;
+                        if (carryFlag) {
+                            int cpyB = regB;
+                            sz5h3pnFlags &= ~(HALFCARRY_MASK | PARITY_MASK);
+                            cpyB += (sz5h3pnFlags & ADDSUB_MASK) != 0 ? 0 : 1;
+                            sz5h3pnFlags |= ((cpyB ^ regB) & HALFCARRY_MASK);
+                            sz5h3pnFlags |= (sz53pn_addTable[(cpyB & 0x07)] & PARITY_MASK);
+                        }
+                    }
                 }
                 break;
             }
@@ -5668,6 +5695,17 @@ public class Z80 {
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
                     MemIoImpl.addressOnBus(getRegBC(), 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= (regPC >>> 8) & FLAG_53_MASK;
+                        if (carryFlag) {
+                            int cpyB = regB;
+                            sz5h3pnFlags &= ~(HALFCARRY_MASK | PARITY_MASK);
+                            cpyB += (sz5h3pnFlags & ADDSUB_MASK) != 0 ? -1 : 1;
+                            sz5h3pnFlags |= ((cpyB ^ regB) & HALFCARRY_MASK);
+                            sz5h3pnFlags |= (sz53pn_addTable[(cpyB & 0x07)] & PARITY_MASK);
+                        }
+                    }
                 }
                 break;
             }
@@ -5677,6 +5715,10 @@ public class Z80 {
                     regPC = (regPC - 2) & 0xffff;
                     memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegDE() + 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= ((regPC >>> 8) & FLAG_53_MASK);
+                    }
                 }
                 break;
             }
@@ -5687,6 +5729,10 @@ public class Z80 {
                     regPC = (regPC - 2) & 0xffff;
                     memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegHL() + 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= ((regPC >>> 8) & FLAG_53_MASK);
+                    }
                 }
                 break;
             }
@@ -5695,6 +5741,17 @@ public class Z80 {
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
                     MemIoImpl.addressOnBus((getRegHL() + 1) & 0xffff, 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= (regPC >>> 8) & FLAG_53_MASK;
+                        if (carryFlag) {
+                            int cpyB = regB;
+                            sz5h3pnFlags &= ~(HALFCARRY_MASK | PARITY_MASK);
+                            cpyB += (sz5h3pnFlags & ADDSUB_MASK) != 0 ? -1 : 1;
+                            sz5h3pnFlags |= ((cpyB ^ regB) & HALFCARRY_MASK);
+                            sz5h3pnFlags |= (sz53pn_addTable[(cpyB & 0x07)] & PARITY_MASK);
+                        }
+                    }
                 }
                 break;
             }
@@ -5703,6 +5760,17 @@ public class Z80 {
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
                     MemIoImpl.addressOnBus(getRegBC(), 5);
+                    if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+                        sz5h3pnFlags &= ~FLAG_53_MASK;
+                        sz5h3pnFlags |= (regPC >>> 8) & FLAG_53_MASK;
+                        if (carryFlag) {
+                            int cpyB = regB;
+                            sz5h3pnFlags &= ~(HALFCARRY_MASK | PARITY_MASK);
+                            cpyB += (sz5h3pnFlags & ADDSUB_MASK) != 0 ? -1 : 1;
+                            sz5h3pnFlags |= ((cpyB ^ regB) & HALFCARRY_MASK);
+                            sz5h3pnFlags |= (sz53pn_addTable[(cpyB & 0x07)] & PARITY_MASK);
+                        }
+                    }
                 }
                 break;
             }
