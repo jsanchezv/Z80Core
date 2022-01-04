@@ -150,6 +150,70 @@
  *          29/01/2018 CB es el único prefijo de instrucción cuyo byte siguiente produce SIEMPRE un
  *          código de instrucción válido, de modo que no merece la pena dividirlo en dos y es mejor
  *          que se ejecute como una unidad indivisible.
+ *
+ *          03/01/2022 Se corrige el comportamiento de HALT, según esto:
+ *
+ *          The "halt" instruction enables the HALT state after PC is incremented during the opcode
+ *          fetch. The CPU neither decrements nor avoids incrementing PC "so that the instruction is
+ *          re-executed" as Sean Young writes in section 5.4 of "The Undocumented Z80 Documented".
+ *          During the HALT state, the CPU repeatedly executes an internal NOP operation. Each NOP
+ *          consists of 1 M1 cycle with 4 T-states that fetches and disregards the next opcode after
+ *          "halt" without incrementing PC. This opcode is read again and again until an exit
+ *          condition occurs (i.e., INT, NMI or RESET). This was first documented by Tony Brewer and
+ *          later re-confirmed by the HALT2INT test written by Mark Woodmass.
+ *
+ *          If the opcode following halt is read from an address that is not contended, but the halt
+ *          opcode is, or viceversa, then the contention emulation will not be accurate if the
+ *          emulator doesn't implement this correctly. The test places a "halt" opcode in the
+ *          boundaries of the VRAM so that this can be tested.
+ *          ----------------------------------
+ *          Contended RAM | Uncontended RAM
+ *          --------------+-------------------
+ *             ... | halt | nop  | nop  | ...
+ *          --------------+-------------------
+ *            7FFE | 7FFF | 8000 | 8001 | ...
+ *
+ *          Correct implementation:
+ *
+ *          fetch(7FFFh)
+ *          -> CPU increments PC
+ *          -> CPU enables the HALT state
+ *          (void)fetch(8000h)
+ *          (void)fetch(8000h)
+ *          (void)fetch(8000h)
+ *          (void)fetch(8000h)
+ *          (void)fetch(8000h)
+ *          ...
+ *          INT
+ *          -> CPU disables the HALT state
+ *          -> CPU responds to the interrupt
+ *          -> CPU returns from the ISR
+ *          fetch(8000h)
+ *          fetch(8001h)
+ *
+ *
+ *          Incorrect implementation:
+ *
+ *          fetch(7FFFh)
+ *          -> CPU enables the HALT state
+ *          fetch(7FFFh)
+ *          fetch(7FFFh)
+ *          fetch(7FFFh)
+ *          fetch(7FFFh)
+ *          fetch(7FFFh)
+ *          ...
+ *          INT
+ *          -> CPU disables the HALT state
+ *          -> CPU responds to the interrupt
+ *          -> CPU returns from the ISR
+ *          fetch(8000h)
+ *          fetch(8001h)
+ *
+ *          https://spectrumcomputing.co.uk/forums/viewtopic.php?f=23&t=6058&start=20
+ *
+ *          Se debe comprobar con HALT2INT (48k) y con Super HALT Invaders Test (128k)
+ *          Si no está bien implementado, el Super Halt Invaders no incrementa la puntuación.
+ *          Thanks to  Woody & ZjoyKiLer
  */
 package z80core;
 
@@ -1709,10 +1773,7 @@ public class Z80 {
 //        int tmp = tEstados; // peek8 modifica los tEstados
         lastFlagQ = false;
         // Si estaba en un HALT esperando una INT, lo saca de la espera
-        if (halted) {
-            halted = false;
-            regPC = (regPC + 1) & 0xffff;
-        }
+        halted = false;
 
         MemIoImpl.interruptHandlingTime(7);
 
@@ -1736,15 +1797,13 @@ public class Z80 {
      */
     private void nmi() {
         lastFlagQ = false;
+        halted = false;
         // Esta lectura consigue dos cosas:
         //      1.- La lectura del opcode del M1 que se descarta
         //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
         MemIoImpl.fetchOpcode(regPC);
         MemIoImpl.interruptHandlingTime(1);
-        if (halted) {
-            halted = false;
-            regPC = (regPC + 1) & 0xffff;
-        }
+
         regR++;
         ffIFF1 = false;
         push(regPC);  // 3+3 t-estados + contended si procede
@@ -1784,40 +1843,42 @@ public class Z80 {
             opCode = NotifyImpl.breakpoint(regPC, opCode);
         }
 
-        regPC = (regPC + 1) & 0xffff;
+        if (!halted) {
+            regPC = (regPC + 1) & 0xffff;
 
-        // El prefijo 0xCB no cuenta para esta guerra.
-        // En CBxx todas las xx producen un código válido
-        // de instrucción, incluyendo CBCB.
-        switch (prefixOpcode) {
-            case 0x00:
-                flagQ = pendingEI = false;
-                decodeOpcode(opCode);
-                break;
-            case 0xDD:
-                prefixOpcode = 0;
-                regIX = decodeDDFD(opCode, regIX);
-                break;
-            case 0xED:
-                prefixOpcode = 0;
-                decodeED(opCode);
-                break;
-            case 0xFD:
-                prefixOpcode = 0;
-                regIY = decodeDDFD(opCode, regIY);
-                break;
-            default:
-                System.out.println(String.format("ERROR!: prefixOpcode = %02x, opCode = %02x", prefixOpcode, opCode));
-        }
+            // El prefijo 0xCB no cuenta para esta guerra.
+            // En CBxx todas las xx producen un código válido
+            // de instrucción, incluyendo CBCB.
+            switch (prefixOpcode) {
+                case 0x00:
+                    flagQ = pendingEI = false;
+                    decodeOpcode(opCode);
+                    break;
+                case 0xDD:
+                    prefixOpcode = 0;
+                    regIX = decodeDDFD(opCode, regIX);
+                    break;
+                case 0xED:
+                    prefixOpcode = 0;
+                    decodeED(opCode);
+                    break;
+                case 0xFD:
+                    prefixOpcode = 0;
+                    regIY = decodeDDFD(opCode, regIY);
+                    break;
+                default:
+                    System.out.println(String.format("ERROR!: prefixOpcode = %02x, opCode = %02x", prefixOpcode, opCode));
+            }
 
-        if (prefixOpcode != 0x00) {
-            return;
-        }
+            if (prefixOpcode != 0x00) {
+                return;
+            }
 
-        lastFlagQ = flagQ;
+            lastFlagQ = flagQ;
 
-        if (execDone) {
-            NotifyImpl.execDone();
+            if (execDone) {
+                NotifyImpl.execDone();
+            }
         }
 
         // Primero se comprueba NMI
@@ -2426,7 +2487,6 @@ public class Z80 {
                 break;
             }
             case 0x76: {     /* HALT */
-                regPC = (regPC - 1) & 0xffff;
                 halted = true;
                 break;
             }
@@ -5661,7 +5721,7 @@ public class Z80 {
             }
         }
     }
-    
+
     private void copyToRegister(int opCode, int value)
     {
         switch(opCode & 0x07)

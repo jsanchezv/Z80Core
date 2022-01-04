@@ -25,7 +25,7 @@ public class Z80Exerciser implements NotifyOps {
 
     private final byte z80Ram[] = new byte[0x10000];
     private boolean finish = false;
-    
+
     public Z80Exerciser() {
         memIo = new MemIoOps(0, 0);
         memIo.setRam(z80Ram);
@@ -69,7 +69,7 @@ public class Z80Exerciser implements NotifyOps {
             Logger.getLogger(Z80Exerciser.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        
+
         z80.reset();
         memIo.reset();
         finish = false;
