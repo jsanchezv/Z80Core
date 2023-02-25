@@ -383,7 +383,7 @@ public class Z80 {
 
     // Un true en una dirección indica que se debe notificar que se va a
     // ejecutar la instrucción que está en esa direción.
-    private final boolean breakpointAt[] = new boolean[65536];
+    private final BitSet breakpointAt = new BitSet(65536);
 
     // Constructor de la clase
     public Z80(MemIoOps memory, NotifyOps notify) {
