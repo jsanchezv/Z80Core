@@ -1,7 +1,6 @@
-# Z80Core
-#### A Z80 core written in Java.
+= Z80Core: a Z80 core written in Java.
 
-This core is a slightly modified core extracted from [JSpeccy](https://github.com/jsanchezv/JSpeccy), ready to be used at any emulator that needs a Z80 CPU.
+This core is a slightly modified core extracted from https://github.com/jsanchezv/JSpeccy[JSpeccy], ready to be used in any emulator that needs a Z80 CPU.
 
 This code emulates the Z80 CPU full instruction set including:
 
@@ -11,4 +10,4 @@ This code emulates the Z80 CPU full instruction set including:
 * Strict execution order for every instruction.
 * Precise timing for all instructions, totally decoupled from the core
 
-An example that executes the CP/M v2.2 tests ZEXALL & ZEXDOC is included as an use case.
+An example that executes the CP/M v2.2 tests ZEXALL & ZEXDOC is included as a use case.

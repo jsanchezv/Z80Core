@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package z80core;
 
 /**
@@ -10,8 +5,8 @@ package z80core;
  * @author jsanchez
  */
 public class MemIoOps {
-    private byte z80Ram[] = null;
-    private byte z80Ports[] = null;
+    private byte[] z80Ram = null;
+    private byte[] z80Ports = null;
     private long tstates = 0;
 
     public MemIoOps() {
@@ -35,11 +30,11 @@ public class MemIoOps {
         }
     }
 
-    public void setRam(byte ram[]) {
+    public void setRam(byte[] ram) {
         z80Ram = ram;
     }
 
-    public void setPorts(byte ports[]) {
+    public void setPorts(byte[] ports) {
         z80Ram = ports;
     }
 
