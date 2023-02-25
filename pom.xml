@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.jsanchezv.zxcore</groupId>
-    <artifactId>zxcore</artifactId>
-    <version>1.0.0</version>
-    <packaging>jar</packaging>
+    <artifactId>zxcore-project</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -25,8 +25,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <spring-boot-maven-plugin.finalName>zxcore</spring-boot-maven-plugin.finalName>
-
         <!-- Maven plug-in versions -->
         <spotbugs-maven-plugin.version>4.7.3.0</spotbugs-maven-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
@@ -36,7 +34,13 @@
         <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
         <dependency-check-maven.version>7.4.0</dependency-check-maven.version>
         <native-maven-plugin.version>0.9.20</native-maven-plugin.version>
+        <spring-boot-maven-plugin.version>3.0.3</spring-boot-maven-plugin.version>
     </properties>
+
+    <modules>
+        <module>core</module>
+        <module>exerciser</module>
+    </modules>
 
     <dependencies>
         <dependency>
@@ -56,11 +60,6 @@
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <version>${native-maven-plugin.version}</version>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -88,16 +87,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${project.parent.version}</version>
-                <configuration>
-                    <executable>true</executable>
-                    <finalName>${spring-boot-maven-plugin.finalName}</finalName>
-                    <jvmArguments>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8888</jvmArguments>
-                </configuration>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -139,27 +128,6 @@
         </pluginManagement>
     </build>
     <profiles>
-        <profile>
-            <id>native</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>native-maven-plugin</artifactId>
-                        <version>${native-maven-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>build-native</id>
-                                <goals>
-                                    <goal>compile-no-fork</goal>
-                                </goals>
-                                <phase>package</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <!-- Wrap the M2E pseudo plug-in in a profile to prevent superfluos build warnings due to a known -->
             <!-- Eclipse issue https://bugs.eclipse.org/bugs/show_bug.cgi?id=367870                           -->

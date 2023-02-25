@@ -11,3 +11,24 @@ This code emulates the Z80 CPU full instruction set including:
 * Precise timing for all instructions, totally decoupled from the core
 
 An example that executes the CP/M v2.2 tests ZEXALL & ZEXDOC is included as a use case.
+
+Compile the *standard* Java test application with:
+
+    mvn clean install
+
+Run with:
+
+    ./exerciser/target/z80exerciser.jar
+
+[NOTE]
+--
+You'll need graalvm to compile the native version of the application
+--
+
+Compile the *native* Java test application with:
+
+    mvn clean install -Pnative
+
+Run with:
+
+    ./exerciser/target/z80exerciser
