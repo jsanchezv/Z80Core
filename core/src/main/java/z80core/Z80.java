@@ -228,6 +228,12 @@
  *          https://github.com/hoglet67/Z80Decoder/wiki/Undocumented-Flags
  *          Gracias a Victor aka Eremus, from the ESPectrum emulator Hall of Fame,
  *          por su ayuda e insistencia para resolver estos casos tan extraños.
+ * 
+ *          02/12/2023 Se corrige el comportamiento de las instrucciones INxR/OTxR respecto
+ *          al registro escondido WZ, según lo descubierto por ZjoyKiLer:
+ *          https://spectrumcomputing.co.uk/forums/viewtopic.php?f=23&t=10555
+ *          Patrik Rak, from the ZXDS Hall-of-Fame, ha publicado la versión 1.2a de los
+ *          z80tests para comprobar  las instrucciones a través del test z80memptr.tap
  */
 package z80core;
 
@@ -5677,6 +5683,7 @@ public class Z80 {
                 ini();
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
+                    memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegHL() - 1) & 0xffff, 5);
                     adjustINxROUTxRFlags();
                 }
@@ -5686,6 +5693,7 @@ public class Z80 {
                 outi();
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
+                    memptr = regPC + 1;
                     MemIoImpl.addressOnBus(getRegBC(), 5);
                     adjustINxROUTxRFlags();
                 }
@@ -5718,6 +5726,7 @@ public class Z80 {
                 ind();
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
+                    memptr = regPC + 1;
                     MemIoImpl.addressOnBus((getRegHL() + 1) & 0xffff, 5);
                     adjustINxROUTxRFlags();
                 }
@@ -5727,6 +5736,7 @@ public class Z80 {
                 outd();
                 if (regB != 0) {
                     regPC = (regPC - 2) & 0xffff;
+                    memptr = regPC + 1;
                     MemIoImpl.addressOnBus(getRegBC(), 5);
                     adjustINxROUTxRFlags();
                 }
